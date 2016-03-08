@@ -28,6 +28,14 @@
                            name:        @"com.apple.screenIsUnlocked"
                          object:      nil
              ];
+            //This notification is filed on NSWorkspace's notification center, not the default
+            //notification center. You will not receive wake notifications if you file with the
+            //default notification center.
+            [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver: self
+                        selector: @selector(receiveWakeNote:)
+                            name: NSWorkspaceDidWakeNotification
+                          object: NULL
+             ];
             return self;
         }
         else {
@@ -55,6 +63,16 @@
 
     if ([[notification name]  isEqual:@"com.apple.screenIsUnlocked"]) {
         NSLog(@"Screen is unlocked, disabling yubikey");
+        [yk disable];
+    }
+}
+
+// on wake, determine if yubikey should be enabled, then toggle the state twice to re-init
+- (void) receiveWakeNote: (NSNotification*) note
+{
+    NSLog(@"received wake, turning yubikey on and off again");
+    if([yk state]){
+        [yk enable];
         [yk disable];
     }
 }
